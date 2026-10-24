@@ -1,0 +1,65 @@
+/* Installer style sheet: the installer always uses its light layout, but in
+   Windows dark mode Qt switches to a light text color. Force dark text on
+   light backgrounds so that all texts stay readable. */
+
+QWizard, QWizardPage, QDialog, QMessageBox {
+    background-color: #ffffff;
+}
+
+QWidget {
+    color: #1f1f1f;
+}
+
+/* Details on the component page, summary and log are scroll areas, whose
+   viewport would otherwise use the dark palette */
+QAbstractScrollArea, QAbstractScrollArea QWidget {
+    background-color: #ffffff;
+    color: #1f1f1f;
+}
+
+QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QTreeView, QListView {
+    background-color: #ffffff;
+    color: #1f1f1f;
+    border: 1px solid #adadad;
+}
+
+QPushButton {
+    background-color: #f3f3f3;
+    color: #1f1f1f;
+    border: 1px solid #adadad;
+    border-radius: 3px;
+    padding: 4px 16px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    background-color: #e5f1fb;
+    border-color: #0078d4;
+}
+
+QPushButton:default {
+    border-color: #0078d4;
+}
+
+QPushButton:disabled {
+    color: #a0a0a0;
+}
+
+/* Check boxes: the dark palette would draw a black box */
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    background-color: #ffffff;
+    border: 1px solid #6e6e6e;
+    border-radius: 2px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0078d4;
+    border-color: #0078d4;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #e0e0e0;
+    border-color: #a0a0a0;
+}

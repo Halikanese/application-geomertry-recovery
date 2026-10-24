@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Application Geometry Recovery</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="centralLayout">
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+      <widget class="QListWidget" name="profileList"/>
+      <widget class="QWidget" name="profilePanel">
+       <layout class="QVBoxLayout" name="profileLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="profileInfo">
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextInteractionFlag::TextSelectableByMouse</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeView" name="windowTree">
+          <property name="contextMenuPolicy">
+           <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="uniformRowHeights">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <widget class="QMenu" name="profileMenu">
+    <property name="title">
+     <string>Profile</string>
+    </property>
+    <addaction name="restoreAction"/>
+    <addaction name="removeAction"/>
+   </widget>
+   <widget class="QMenu" name="extraMenu">
+    <property name="title">
+     <string>Extra</string>
+    </property>
+    <addaction name="checkUpdatesAction"/>
+   </widget>
+   <addaction name="profileMenu"/>
+   <addaction name="extraMenu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="checkUpdatesAction">
+   <property name="text">
+    <string>Check for updates…</string>
+   </property>
+  </action>
+  <action name="restoreAction">
+   <property name="text">
+    <string>Restore</string>
+   </property>
+  </action>
+  <action name="removeAction">
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

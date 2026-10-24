@@ -1,0 +1,2 @@
+// Windows resources: icon of the EXE, also used by its shortcuts
+IDI_ICON1 ICON "icons/ApplicationGeometryRecovery.ico"

@@ -1,0 +1,65 @@
+# Reads the translations of one context from Qt .ts files and returns them as
+# JavaScript statements that fill the object "translations":
+#
+#   translations["de"]["Source text"] = "Translated text";
+#
+# Used for the installer control script, which runs before the component and
+# its .qm files are loaded.
+function(ifw_embed_translations outVar context)
+    set(code "")
+    foreach(tsFile IN LISTS ARGN)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${tsFile})
+        string(REGEX MATCH "_([a-zA-Z]+)\\.ts$" _ "${tsFile}")
+        set(lang ${CMAKE_MATCH_1})
+        string(APPEND code "\ntranslations[\"${lang}\"] = {};")
+
+        file(READ ${tsFile} ts)
+        string(FIND "${ts}" "<name>${context}</name>" start)
+        if (start EQUAL -1)
+            continue()
+        endif()
+        string(SUBSTRING "${ts}" ${start} -1 ts)
+        string(FIND "${ts}" "</context>" end)
+        string(SUBSTRING "${ts}" 0 ${end} ts)
+
+        while(TRUE)
+            string(FIND "${ts}" "<source>" sourceStart)
+            if (sourceStart EQUAL -1)
+                break()
+            endif()
+            math(EXPR sourceStart "${sourceStart} + 8")
+            string(SUBSTRING "${ts}" ${sourceStart} -1 ts)
+            string(FIND "${ts}" "</source>" sourceEnd)
+            string(SUBSTRING "${ts}" 0 ${sourceEnd} source)
+
+            string(FIND "${ts}" "<translation" translationStart)
+            string(SUBSTRING "${ts}" ${translationStart} -1 ts)
+            string(FIND "${ts}" ">" tagEnd)
+            string(SUBSTRING "${ts}" 0 ${tagEnd} tag)
+            math(EXPR tagEnd "${tagEnd} + 1")
+            string(SUBSTRING "${ts}" ${tagEnd} -1 ts)
+            string(FIND "${ts}" "</translation>" translationEnd)
+            string(SUBSTRING "${ts}" 0 ${translationEnd} translation)
+
+            # Unfinished or empty translations are left out
+            if (NOT translation STREQUAL "" AND NOT tag MATCHES "unfinished|vanished|obsolete")
+                set(texts)
+                foreach(text IN ITEMS source translation)
+                    set(value "${${text}}")
+                    string(REPLACE "\r" "" value "${value}")
+                    string(REPLACE "&lt;" "<" value "${value}")
+                    string(REPLACE "&gt;" ">" value "${value}")
+                    string(REPLACE "&quot;" "\"" value "${value}")
+                    string(REPLACE "&apos;" "'" value "${value}")
+                    string(REPLACE "&amp;" "&" value "${value}")
+                    string(REPLACE "\\" "\\\\" value "${value}")
+                    string(REPLACE "\"" "\\\"" value "${value}")
+                    string(REPLACE "\n" "\\n" value "${value}")
+                    set(${text} "${value}")
+                endforeach()
+                string(APPEND code "\ntranslations[\"${lang}\"][\"${source}\"] = \"${translation}\";")
+            endif()
+        endwhile()
+    endforeach()
+    set(${outVar} "${code}" PARENT_SCOPE)
+endfunction()
