@@ -58,6 +58,15 @@ public:
     // Removes an instance or, on the top level, the whole application
     void removeEntry(const QModelIndex &index);
 
+    // Rectangle shown and edited in the layout view: the window rectangle
+    // for normal windows, the restored (normal) position otherwise
+    static QRect editableRect(const InstanceInfo &instance);
+    // Changes the geometry of an instance without saving it yet
+    void setInstanceRect(int applicationRow, int instanceRow, const QRect &rect);
+    // Reports the changes made with setInstanceRect as profileEdited()
+    void finishGeometryEdit();
+    QModelIndex instanceIndex(int applicationRow, int instanceRow, int column = 0) const;
+
     QModelIndex index(int row, int column, const QModelIndex &parent = {}) const override;
     QModelIndex parent(const QModelIndex &child) const override;
     int rowCount(const QModelIndex &parent = {}) const override;

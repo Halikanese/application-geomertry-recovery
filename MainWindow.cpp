@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "AppIcon.h"
+#include "LayoutBridge.h"
 #include "ProfileModel.h"
 #include "ProfileStore.h"
 #include "UpdateChecker.h"
@@ -12,6 +13,10 @@
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
+#include <QQmlContext>
+#include <QQuickWidget>
+#include <QSignalBlocker>
+#include <QSplitter>
 #include <QStatusBar>
 #include <QTreeView>
 
@@ -29,6 +34,7 @@ MainWindow::MainWindow(ProfileStore *store, QWidget *parent)
     , ui(std::make_unique<Ui::MainWindow>())
     , m_store(store)
     , m_model(new ProfileModel(this))
+    , m_layout(new LayoutBridge(m_model, this))
 {
     ui->setupUi(this);
     setWindowIcon(appIcon());
@@ -39,6 +45,7 @@ MainWindow::MainWindow(ProfileStore *store, QWidget *parent)
     //ui->windowTree->setColumnHidden(ProfileModel::PathColumn, true);
     // A bit more height per row, so that the check boxes fit
     ui->windowTree->setStyleSheet(QStringLiteral("QTreeView::item { padding: 3px 0px; }"));
+    setupLayoutView();
     ui->splitter->setStretchFactor(1, 1);
     ui->splitter->setSizes({220, 980});
 
@@ -56,32 +63,44 @@ MainWindow::MainWindow(ProfileStore *store, QWidget *parent)
 
     // Saving reloads the profile into the model, so not while the model is
     // still handling the change
-    connect(m_model, &ProfileModel::profileEdited, this,
-            [this] { m_store->store(m_model->profile()); }, Qt::QueuedConnection);
+    connect(m_model, &ProfileModel::profileEdited, this, [this] {
+        m_storingEdit = true;
+        m_store->store(m_model->profile());
+        m_storingEdit = false;
+    }, Qt::QueuedConnection);
     connect(m_store, &ProfileStore::profilesChanged, this, &MainWindow::reloadProfiles);
 
     reloadProfiles();
 }
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    // The QML view uses the bridge, which would otherwise be deleted first
+    delete m_layoutView;
+}
 
 void MainWindow::reloadProfiles()
 {
     const QString previous = currentProfile();
-    ui->profileList->clear();
-    ui->profileList->addItems(m_store->names());
+    {
+        // The profile is shown once below instead of on every list change
+        const QSignalBlocker blocker(ui->profileList);
+        ui->profileList->clear();
+        ui->profileList->addItems(m_store->names());
 
-    const QList<QListWidgetItem *> found = ui->profileList->findItems(previous, Qt::MatchExactly);
-    if (!found.isEmpty())
-        ui->profileList->setCurrentItem(found.first());
-    else if (ui->profileList->count() > 0)
-        ui->profileList->setCurrentRow(0);
+        const QList<QListWidgetItem *> found = ui->profileList->findItems(previous, Qt::MatchExactly);
+        if (!found.isEmpty())
+            ui->profileList->setCurrentItem(found.first());
+        else if (ui->profileList->count() > 0)
+            ui->profileList->setCurrentRow(0);
+    }
+
+    // After an edit in this window the model already shows the saved state;
+    // reloading it would lose the selection and the expanded rows
+    const QString name = currentProfile();
+    if (m_storingEdit && name == previous && m_store->contains(name))
+        showProfileInfo(m_store->profile(name));
     else
-        showProfile(QString());
-
-    // With the same name currentTextChanged is not emitted, but the profile
-    // may have been overwritten.
-    if (!found.isEmpty())
-        showProfile(previous);
+        showProfile(name);
 }
 
 QString MainWindow::currentProfile() const
@@ -102,7 +121,16 @@ void MainWindow::showProfile(const QString &name)
     }
 
     const Profile profile = m_store->profile(name);
+    showProfileInfo(profile);
 
+    m_model->setProfile(profile);
+    ui->windowTree->expandAll();
+    for (int column = 0; column < ProfileModel::ColumnCount; ++column)
+        ui->windowTree->resizeColumnToContents(column);
+}
+
+void MainWindow::showProfileInfo(const Profile &profile)
+{
     QStringList monitors;
     for (const MonitorInfo &monitor : profile.monitors) {
         monitors.append(tr("%1: %2, %3 dpi%4")
@@ -118,11 +146,44 @@ void MainWindow::showProfile(const QString &name)
                  profile.remoteSession ? tr("Remote Desktop") : tr("local"),
                  monitors.join(QStringLiteral("; ")).toHtmlEscaped())
             .arg(profile.windowCount()));
+}
 
-    m_model->setProfile(profile);
-    ui->windowTree->expandAll();
-    for (int column = 0; column < ProfileModel::ColumnCount; ++column)
-        ui->windowTree->resizeColumnToContents(column);
+void MainWindow::setupLayoutView()
+{
+    // The layout view goes below the window list, both in a splitter
+    auto *view = new QQuickWidget;
+    m_layoutView = view;
+    view->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    view->setMinimumHeight(150);
+    view->rootContext()->setContextProperty(QStringLiteral("layoutBridge"), m_layout);
+    view->setSource(QUrl(QStringLiteral("qrc:/qt/qml/ApplicationGeometryRecovery/LayoutView.qml")));
+
+    auto *splitter = new QSplitter(Qt::Vertical);
+    ui->profileLayout->replaceWidget(ui->windowTree, splitter);
+    splitter->addWidget(ui->windowTree);
+    splitter->addWidget(view);
+    splitter->setChildrenCollapsible(false);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 1);
+
+    // Selection in both directions: window list and layout view
+    connect(ui->windowTree->selectionModel(), &QItemSelectionModel::currentChanged, this,
+            [this](const QModelIndex &current) {
+                if (current.isValid() && current.parent().isValid())
+                    m_layout->setSelection(current.parent().row(), current.row());
+                else
+                    m_layout->setSelection(-1, -1);
+            });
+    connect(m_layout, &LayoutBridge::selectionRequested, this, [this](int application, int instance) {
+        if (application < 0) {
+            ui->windowTree->selectionModel()->clearCurrentIndex();
+            ui->windowTree->clearSelection();
+            return;
+        }
+        const QModelIndex index = m_model->instanceIndex(application, instance);
+        ui->windowTree->setCurrentIndex(index);
+        ui->windowTree->scrollTo(index);
+    });
 }
 
 void MainWindow::removeCurrentProfile()

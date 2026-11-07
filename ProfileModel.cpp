@@ -68,6 +68,38 @@ void ProfileModel::removeEntry(const QModelIndex &index)
     emit profileEdited();
 }
 
+QRect ProfileModel::editableRect(const InstanceInfo &instance)
+{
+    return instance.state == WindowState::Normal ? instance.windowRect : instance.normalRect;
+}
+
+void ProfileModel::setInstanceRect(int applicationRow, int instanceRow, const QRect &rect)
+{
+    if (applicationRow < 0 || applicationRow >= m_profile.applications.size())
+        return;
+    QList<InstanceInfo> &instances = m_profile.applications[applicationRow].instances;
+    if (instanceRow < 0 || instanceRow >= instances.size())
+        return;
+
+    // A normal window is placed with its window rectangle; minimized and
+    // maximized windows get their restored position from normalRect
+    InstanceInfo &instance = instances[instanceRow];
+    if (instance.state == WindowState::Normal)
+        instance.windowRect = rect;
+    instance.normalRect = rect;
+    emit dataChanged(instanceIndex(applicationRow, instanceRow, WindowRectColumn),
+                     instanceIndex(applicationRow, instanceRow, NormalRectColumn), {Qt::DisplayRole});
+}
+
+void ProfileModel::finishGeometryEdit()
+{
+    emit profileEdited();
+}
+
+QModelIndex ProfileModel::instanceIndex(int applicationRow, int instanceRow, int column) const
+{
+    return index(instanceRow, column, index(applicationRow, 0));
+}
 QModelIndex ProfileModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent))

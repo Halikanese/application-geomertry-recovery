@@ -24,8 +24,11 @@
 
 #include <QMainWindow>
 
+#include "WindowInfo.h"
+
 #include <memory>
 
+class LayoutBridge;
 class ProfileModel;
 class ProfileStore;
 
@@ -48,6 +51,8 @@ signals:
 private:
     void reloadProfiles();
     void showProfile(const QString &name);
+    void showProfileInfo(const Profile &profile);
+    void setupLayoutView();
     QString currentProfile() const;
     void removeCurrentProfile();
     void showEntryMenu(const QPoint &position);
@@ -55,4 +60,8 @@ private:
     std::unique_ptr<Ui::MainWindow> ui;
     ProfileStore *m_store;
     ProfileModel *m_model;
+    LayoutBridge *m_layout;
+    QWidget *m_layoutView = nullptr;
+    // A change made in this window is being saved: the model already has it
+    bool m_storingEdit = false;
 };
