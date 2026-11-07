@@ -204,8 +204,33 @@ bool applyPlacement(HWND hwnd, const WindowInfo &info, UINT showCmd)
     return SetWindowPlacement(hwnd, &placement);
 }
 
+// true if the window already has the saved state and geometry
+bool isAlreadyPlaced(HWND hwnd, const WindowInfo &info)
+{
+    WINDOWPLACEMENT placement{};
+    placement.length = sizeof(placement);
+    RECT rect{};
+    if (!GetWindowPlacement(hwnd, &placement) || !GetWindowRect(hwnd, &rect))
+        return false;
+    const QRect normalRect = toQRect(placement.rcNormalPosition);
+
+    switch (info.state) {
+    case WindowState::Maximized:
+        return IsZoomed(hwnd) && toQRect(rect) == info.windowRect && normalRect == info.normalRect;
+    case WindowState::Minimized:
+        return IsIconic(hwnd) && normalRect == info.normalRect;
+    case WindowState::Normal:
+        break;
+    }
+    return !IsZoomed(hwnd) && !IsIconic(hwnd) && toQRect(rect) == info.windowRect;
+}
+
 bool restoreWindow(HWND hwnd, const WindowInfo &info)
 {
+    // Setting the placement makes a window flicker, even if nothing changes
+    if (isAlreadyPlaced(hwnd, info))
+        return true;
+
     // Show normal first so that a maximized window can also change
     // monitors.
     if (!applyPlacement(hwnd, info, SW_SHOWNOACTIVATE))
