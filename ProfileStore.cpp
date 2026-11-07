@@ -87,21 +87,25 @@ void readIdentity(QSettings &settings, ApplicationIdentity &identity)
 {
     identity.executablePath = settings.value(QStringLiteral("executablePath")).toString();
     identity.processName = settings.value(QStringLiteral("processName")).toString();
-    identity.className = settings.value(QStringLiteral("className")).toString();
 }
 
 void writeIdentity(QSettings &settings, const ApplicationIdentity &identity)
 {
     settings.setValue(QStringLiteral("executablePath"), identity.executablePath);
     settings.setValue(QStringLiteral("processName"), identity.processName);
-    settings.setValue(QStringLiteral("className"), identity.className);
 }
 
-// autostartDefault: for files that store the setting per application or profile
-InstanceInfo readInstance(QSettings &settings, bool autostartDefault)
+// autostartDefault and classDefault: for older files that store these per
+// application or profile
+InstanceInfo readInstance(QSettings &settings, bool autostartDefault, const QString &classDefault)
 {
     InstanceInfo instance;
     instance.instance = settings.value(QStringLiteral("instance")).toInt();
+    instance.className = settings.value(QStringLiteral("className"), classDefault).toString();
+    instance.title = settings.value(QStringLiteral("title")).toString();
+    instance.matchInstance = settings.value(QStringLiteral("matchInstance")).toBool();
+    instance.matchClass = settings.value(QStringLiteral("matchClass")).toBool();
+    instance.matchTitle = settings.value(QStringLiteral("matchTitle")).toBool();
     instance.state = stateFromKey(settings.value(QStringLiteral("state")).toString());
     instance.windowRect = readRect(settings, QStringLiteral("windowRect"));
     instance.normalRect = readRect(settings, QStringLiteral("normalRect"));
@@ -119,6 +123,11 @@ InstanceInfo readInstance(QSettings &settings, bool autostartDefault)
 void writeInstance(QSettings &settings, const InstanceInfo &instance)
 {
     settings.setValue(QStringLiteral("instance"), instance.instance);
+    settings.setValue(QStringLiteral("className"), instance.className);
+    settings.setValue(QStringLiteral("title"), instance.title);
+    settings.setValue(QStringLiteral("matchInstance"), instance.matchInstance);
+    settings.setValue(QStringLiteral("matchClass"), instance.matchClass);
+    settings.setValue(QStringLiteral("matchTitle"), instance.matchTitle);
     settings.setValue(QStringLiteral("state"), stateKey(instance.state));
     writeRect(settings, QStringLiteral("windowRect"), instance.windowRect);
     writeRect(settings, QStringLiteral("normalRect"), instance.normalRect);
@@ -240,10 +249,11 @@ void ProfileStore::load()
             ApplicationInfo application;
             readIdentity(settings, application);
             const bool startApplication = settings.value(QStringLiteral("autostart"), startAll).toBool();
+            const QString applicationClass = settings.value(QStringLiteral("className")).toString();
             const int instanceCount = settings.beginReadArray(QStringLiteral("instances"));
             for (int i = 0; i < instanceCount; ++i) {
                 settings.setArrayIndex(i);
-                application.instances.append(readInstance(settings, startApplication));
+                application.instances.append(readInstance(settings, startApplication, applicationClass));
             }
             settings.endArray();
             profile.applications.append(application);
@@ -258,11 +268,14 @@ void ProfileStore::load()
                 settings.setArrayIndex(w);
                 WindowInfo window;
                 readIdentity(settings, window);
-                static_cast<InstanceInfo &>(window) = readInstance(settings, startAll);
+                static_cast<InstanceInfo &>(window) = readInstance(settings, startAll, QString());
                 windows.append(window);
             }
             settings.endArray();
             profile.setWindows(windows);
+        } else {
+            // Older files group by EXE and window class, now only by EXE
+            profile.setWindows(profile.windows());
         }
         if (!profile.name.isEmpty())
             m_profiles.append(profile);

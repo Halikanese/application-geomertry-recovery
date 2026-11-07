@@ -38,17 +38,15 @@ enum class WindowState {
     Maximized,
 };
 
-// Identifies an application window: the EXE and the window class
+// Identifies an application: the EXE
 struct ApplicationIdentity
 {
     QString executablePath;   // Full path of the EXE
     QString processName;      // File name of the EXE
-    QString className;        // Window class
 
-    // Key for matching on restore
+    // Key for matching on restore and for grouping the saved windows
     QString matchKey() const { return executablePath.toLower(); }
-    // Key for grouping the saved windows into applications
-    QString groupKey() const { return executablePath.toLower() + u'|' + className; }
+    QString groupKey() const { return matchKey(); }
 };
 
 // Geometry of one window (instance) of an application. Coordinates are
@@ -56,6 +54,14 @@ struct ApplicationIdentity
 struct InstanceInfo
 {
     int instance = 0;         // Sequence number among windows of the same application
+    QString className;        // Window class
+    QString title;            // Window title
+
+    // Which properties a saved window requires of an open window to be
+    // matched to it; without any, windows are matched in instance order
+    bool matchInstance = false;
+    bool matchClass = false;
+    bool matchTitle = false;
 
     WindowState state = WindowState::Normal;
     QRect windowRect;         // Actual rectangle in screen coordinates (GetWindowRect)

@@ -27,9 +27,9 @@
 #include <QAbstractItemModel>
 
 // Saved applications of a profile as a tree: on the top level the
-// applications (EXE, window class), below them their windows (instances).
-// Editable are the "Default geometry" and "Autostart" columns of the
-// instances.
+// applications (EXE), below them their windows (instances). Editable are the
+// check boxes of the instances: "Default geometry", "Autostart" and the
+// matching options in the "Instance", "Window class" and "Title" columns.
 class ProfileModel : public QAbstractItemModel
 {
     Q_OBJECT
@@ -45,6 +45,7 @@ public:
         NormalRectColumn,
         MonitorColumn,
         ClassColumn,
+        TitleColumn,
         PathColumn,
         ColumnCount,
     };
@@ -68,7 +69,7 @@ public:
                         int role = Qt::DisplayRole) const override;
 
 signals:
-    // The user changed the profile (default geometry, autostart, removed entries)
+    // The user changed the profile (check boxes, removed entries)
     void profileEdited();
 
 private:

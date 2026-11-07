@@ -28,6 +28,16 @@ RECT toRect(const QRect &rect)
     return RECT{rect.left(), rect.top(), rect.left() + rect.width(), rect.top() + rect.height()};
 }
 
+QString windowText(HWND hwnd)
+{
+    const int length = GetWindowTextLengthW(hwnd);
+    if (length <= 0)
+        return QString();
+    std::wstring buffer(size_t(length) + 1, L'\0');
+    const int copied = GetWindowTextW(hwnd, buffer.data(), length + 1);
+    return QString::fromWCharArray(buffer.data(), copied);
+}
+
 QString windowClass(HWND hwnd)
 {
     wchar_t buffer[256] = {};
@@ -123,6 +133,7 @@ QList<LiveWindow> enumerateWindows()
         live.hwnd = hwnd;
         WindowInfo &info = live.info;
         info.className = windowClass(hwnd);
+        info.title = windowText(hwnd);
 
         if (info.className == QLatin1String("ApplicationFrameWindow")) {
             if (const DWORD appPid = uwpProcessId(hwnd, pid))
@@ -279,7 +290,9 @@ struct MatchResult
 };
 
 // Assigns saved windows to open windows of the same application in instance
-// order. Windows in excludedHandles are ignored.
+// order. A saved window only takes an open window whose instance number,
+// window class or title match where it requires this. Windows in
+// excludedHandles are ignored.
 MatchResult matchWindows(const QList<WindowInfo> &windows, const QSet<quintptr> &excludedHandles)
 {
     MatchResult result;
@@ -307,12 +320,27 @@ MatchResult matchWindows(const QList<WindowInfo> &windows, const QSet<quintptr> 
         });
         QList<LiveWindow> candidates = available.value(key);
 
-        // Assigned in instance order
-        for (qsizetype i = 0; i < saved.size(); ++i) {
-            if (candidates.isEmpty())
-                result.missing.append(saved.at(i));
-            else
-                result.matches.append({candidates.takeFirst().hwnd, saved.at(i)});
+        // Entries that require more properties first, so that they get their
+        // window before the less specific entries take it
+        std::stable_sort(saved.begin(), saved.end(), [](const WindowInfo &a, const WindowInfo &b) {
+            const auto constraints = [](const WindowInfo &info) {
+                return int(info.matchInstance) + int(info.matchClass) + int(info.matchTitle);
+            };
+            return constraints(a) > constraints(b);
+        });
+
+        for (const WindowInfo &info : std::as_const(saved)) {
+            const auto it = std::find_if(candidates.begin(), candidates.end(), [&](const LiveWindow &live) {
+                return (!info.matchInstance || live.info.instance == info.instance)
+                       && (!info.matchClass || live.info.className == info.className)
+                       && (!info.matchTitle || live.info.title == info.title);
+            });
+            if (it == candidates.end()) {
+                result.missing.append(info);
+            } else {
+                result.matches.append({it->hwnd, info});
+                candidates.erase(it);
+            }
         }
     }
     return result;

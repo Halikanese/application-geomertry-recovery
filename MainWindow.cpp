@@ -35,8 +35,8 @@ MainWindow::MainWindow(ProfileStore *store, QWidget *parent)
 
     ui->windowTree->setModel(m_model);
     // Window class and path stay in the model, but are not shown
-    ui->windowTree->setColumnHidden(ProfileModel::ClassColumn, true);
-    ui->windowTree->setColumnHidden(ProfileModel::PathColumn, true);
+    //ui->windowTree->setColumnHidden(ProfileModel::ClassColumn, true);
+    //ui->windowTree->setColumnHidden(ProfileModel::PathColumn, true);
     // A bit more height per row, so that the check boxes fit
     ui->windowTree->setStyleSheet(QStringLiteral("QTreeView::item { padding: 3px 0px; }"));
     ui->splitter->setStretchFactor(1, 1);

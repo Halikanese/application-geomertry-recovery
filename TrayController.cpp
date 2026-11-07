@@ -125,13 +125,16 @@ void TrayController::saveProfile()
         for (const WindowInfo &window : std::as_const(windows))
             running.insert(window.executablePath.toLower());
         for (const WindowInfo &window : m_store->profile(profile.name).windows()) {
-            // Default geometry and autostart move to the captured window with
-            // the same application and instance number
+            // Default geometry, autostart and the matching options move to the
+            // captured window with the same application and instance number
             if (running.contains(window.executablePath.toLower())) {
                 for (WindowInfo &captured : windows) {
                     if (captured.matchKey() == window.matchKey() && captured.instance == window.instance) {
                         captured.defaultGeometry = window.defaultGeometry;
                         captured.autostart = window.autostart;
+                        captured.matchInstance = window.matchInstance;
+                        captured.matchClass = window.matchClass;
+                        captured.matchTitle = window.matchTitle;
                     }
                 }
             }

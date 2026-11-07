@@ -116,8 +116,6 @@ QVariant ProfileModel::applicationData(const ApplicationInfo &application, int c
             return application.processName;
         case InstanceColumn:
             return application.instances.size();
-        case ClassColumn:
-            return application.className;
         case PathColumn:
             return QDir::toNativeSeparators(application.executablePath);
         default:
@@ -135,6 +133,14 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
         return instance.defaultGeometry ? Qt::Checked : Qt::Unchecked;
     if (role == Qt::CheckStateRole && column == AutostartColumn)
         return instance.autostart ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::CheckStateRole && column == InstanceColumn)
+        return instance.matchInstance ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::CheckStateRole && column == ClassColumn)
+        return instance.matchClass ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::CheckStateRole && column == TitleColumn)
+        return instance.matchTitle ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::ToolTipRole && column == TitleColumn)
+        return instance.title;
     if (role != Qt::DisplayRole)
         return {};
 
@@ -149,6 +155,10 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
         return rectText(instance.normalRect);
     case MonitorColumn:
         return instance.monitorName;
+    case ClassColumn:
+        return instance.className;
+    case TitleColumn:
+        return instance.title;
     default:
         break;
     }
@@ -163,9 +173,27 @@ bool ProfileModel::setData(const QModelIndex &index, const QVariant &value, int 
     if (index.internalId() == TopLevel)
         return false;
 
-    if (index.column() == AutostartColumn) {
-        InstanceInfo &instance = m_profile.applications[int(index.internalId() - 1)].instances[index.row()];
-        instance.autostart = value.value<Qt::CheckState>() == Qt::Checked;
+    // Check boxes that only concern this instance
+    InstanceInfo &instance = m_profile.applications[int(index.internalId() - 1)].instances[index.row()];
+    bool *flag = nullptr;
+    switch (index.column()) {
+    case AutostartColumn:
+        flag = &instance.autostart;
+        break;
+    case InstanceColumn:
+        flag = &instance.matchInstance;
+        break;
+    case ClassColumn:
+        flag = &instance.matchClass;
+        break;
+    case TitleColumn:
+        flag = &instance.matchTitle;
+        break;
+    default:
+        break;
+    }
+    if (flag) {
+        *flag = value.value<Qt::CheckState>() == Qt::Checked;
         emit dataChanged(index, index, {Qt::CheckStateRole});
         emit profileEdited();
         return true;
@@ -200,9 +228,19 @@ Qt::ItemFlags ProfileModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::NoItemFlags;
     Qt::ItemFlags result = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-    if (index.internalId() != TopLevel
-        && (index.column() == DefaultColumn || index.column() == AutostartColumn))
-        result |= Qt::ItemIsUserCheckable;
+    if (index.internalId() != TopLevel) {
+        switch (index.column()) {
+        case InstanceColumn:
+        case DefaultColumn:
+        case AutostartColumn:
+        case ClassColumn:
+        case TitleColumn:
+            result |= Qt::ItemIsUserCheckable;
+            break;
+        default:
+            break;
+        }
+    }
     return result;
 }
 
@@ -214,6 +252,12 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
     if (role == Qt::ToolTipRole && section == DefaultColumn)
         return tr("Used for further windows of the application when all its saved entries are "
                   "in use. At most one per application.");
+    if (role == Qt::ToolTipRole && section == InstanceColumn)
+        return tr("Checked: only an open window with the same instance number is used for this entry.");
+    if (role == Qt::ToolTipRole && section == ClassColumn)
+        return tr("Checked: only an open window with the same window class is used for this entry.");
+    if (role == Qt::ToolTipRole && section == TitleColumn)
+        return tr("Checked: only an open window with the same title is used for this entry.");
     if (role == Qt::ToolTipRole && section == AutostartColumn)
         return tr("Start the application for this window when the profile is loaded and the window is not open.");
     if (role != Qt::DisplayRole)
@@ -238,6 +282,8 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
         return tr("Monitor");
     case ClassColumn:
         return tr("Window class");
+    case TitleColumn:
+        return tr("Title");
     case PathColumn:
         return tr("Path");
     default:

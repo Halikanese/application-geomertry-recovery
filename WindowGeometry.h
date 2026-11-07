@@ -52,7 +52,9 @@ bool isRemoteSession();
 
 // Matches the saved windows to the currently open ones and restores their
 // geometry. With multiple instances of an application, windows are matched
-// in instance order. Windows in excludedHandles are ignored.
+// in instance order, restricted by the matching options of each saved window
+// (instance number, window class, title). Windows in excludedHandles are
+// ignored.
 RestoreResult restore(const QList<WindowInfo> &windows,
                       const QSet<quintptr> &excludedHandles = {});
 

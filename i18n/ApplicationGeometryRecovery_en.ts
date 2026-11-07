@@ -2,9 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en" sourcelanguage="en">
 <context>
-    <name>ProfileModel</name>
-</context>
-<context>
     <name>TrayController</name>
     <message numerus="yes">
         <location filename="../TrayController.cpp" line="104"/>
@@ -15,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../TrayController.cpp" line="183"/>
+        <location filename="../TrayController.cpp" line="186"/>
         <source>Starting %n application(s)…</source>
         <translation>
             <numerusform>Starting %n application…</numerusform>
