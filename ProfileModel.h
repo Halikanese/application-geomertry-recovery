@@ -37,9 +37,9 @@ class ProfileModel : public QAbstractItemModel
 public:
     enum Column {
         ApplicationColumn,
-        InstanceColumn,
         DefaultColumn,
         AutostartColumn,
+        InstanceColumn,
         StateColumn,
         WindowRectColumn,
         NormalRectColumn,
