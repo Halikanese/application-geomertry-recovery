@@ -2,13 +2,17 @@
 
 #include <algorithm>
 
+#include <QDataStream>
 #include <QDir>
+#include <QMimeData>
 
 namespace {
 
 // internalId of an index: 0 for applications, application row + 1 for
 // instances
 constexpr quintptr TopLevel = 0;
+
+const QString InstanceMimeType = QStringLiteral("application/x-agr-instance");
 
 QString rectText(const QRect &rect)
 {
@@ -261,6 +265,7 @@ Qt::ItemFlags ProfileModel::flags(const QModelIndex &index) const
         return Qt::NoItemFlags;
     Qt::ItemFlags result = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     if (index.internalId() != TopLevel) {
+        result |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
         switch (index.column()) {
         case InstanceColumn:
         case DefaultColumn:
@@ -322,4 +327,77 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
         break;
     }
     return {};
+}
+
+Qt::DropActions ProfileModel::supportedDropActions() const
+{
+    return Qt::MoveAction;
+}
+
+QStringList ProfileModel::mimeTypes() const
+{
+    return {InstanceMimeType};
+}
+
+QMimeData *ProfileModel::mimeData(const QModelIndexList &indexes) const
+{
+    for (const QModelIndex &index : indexes) {
+        if (!index.isValid() || index.internalId() == TopLevel)
+            continue;
+        QByteArray encoded;
+        QDataStream stream(&encoded, QIODevice::WriteOnly);
+        stream << int(index.internalId() - 1) << index.row();
+        auto *data = new QMimeData;
+        data->setData(InstanceMimeType, encoded);
+        return data;
+    }
+    return nullptr;
+}
+
+bool ProfileModel::decodeInstance(const QMimeData *data, int &applicationRow, int &instanceRow) const
+{
+    if (!data || !data->hasFormat(InstanceMimeType))
+        return false;
+    QByteArray encoded = data->data(InstanceMimeType);
+    QDataStream stream(&encoded, QIODevice::ReadOnly);
+    stream >> applicationRow >> instanceRow;
+    return applicationRow >= 0 && applicationRow < m_profile.applications.size() && instanceRow >= 0
+           && instanceRow < m_profile.applications.at(applicationRow).instances.size();
+}
+
+bool ProfileModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                                   const QModelIndex &parent) const
+{
+    Q_UNUSED(column)
+    // Only directly on another instance of the same application
+    int applicationRow = -1;
+    int instanceRow = -1;
+    return action == Qt::MoveAction && row < 0 && parent.isValid() && parent.internalId() != TopLevel
+           && decodeInstance(data, applicationRow, instanceRow)
+           && applicationRow == int(parent.internalId() - 1) && instanceRow != parent.row();
+}
+
+bool ProfileModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                                const QModelIndex &parent)
+{
+    if (!canDropMimeData(data, action, row, column, parent))
+        return false;
+
+    int applicationRow = -1;
+    int fromRow = -1;
+    decodeInstance(data, applicationRow, fromRow);
+    const int toRow = parent.row();
+
+    // The instances change places and numbers; settings and geometry stay with them
+    QList<InstanceInfo> &instances = m_profile.applications[applicationRow].instances;
+    std::swap(instances[fromRow].instance, instances[toRow].instance);
+    instances.swapItemsAt(fromRow, toRow);
+
+    for (const int changed : {fromRow, toRow}) {
+        emit dataChanged(instanceIndex(applicationRow, changed, 0),
+                         instanceIndex(applicationRow, changed, ColumnCount - 1));
+    }
+    emit instancesSwapped(applicationRow, fromRow, toRow);
+    emit profileEdited();
+    return true;
 }

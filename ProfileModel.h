@@ -77,13 +77,27 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
 
+    // Drag and drop: dropping an instance on another instance of the same
+    // application swaps their instance numbers
+    Qt::DropActions supportedDropActions() const override;
+    QStringList mimeTypes() const override;
+    QMimeData *mimeData(const QModelIndexList &indexes) const override;
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex &parent) const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex &parent) override;
+
 signals:
     // The user changed the profile (check boxes, removed entries)
     void profileEdited();
+    // Two instances of an application changed places; the rows stay sorted by
+    // number, so a dragged instance is now in row toRow
+    void instancesSwapped(int applicationRow, int fromRow, int toRow);
 
 private:
     QVariant applicationData(const ApplicationInfo &application, int column, int role) const;
     QVariant instanceData(const InstanceInfo &instance, int column, int role) const;
+    bool decodeInstance(const QMimeData *data, int &applicationRow, int &instanceRow) const;
 
     Profile m_profile;
 };

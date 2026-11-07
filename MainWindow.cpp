@@ -40,6 +40,16 @@ MainWindow::MainWindow(ProfileStore *store, QWidget *parent)
     setWindowIcon(appIcon());
 
     ui->windowTree->setModel(m_model);
+    // Dropping an instance on another one swaps their numbers
+    ui->windowTree->setDragEnabled(true);
+    ui->windowTree->setAcceptDrops(true);
+    ui->windowTree->setDropIndicatorShown(true);
+    ui->windowTree->setDragDropMode(QAbstractItemView::DragDrop);
+    ui->windowTree->setDefaultDropAction(Qt::MoveAction);
+    // The selection follows the dragged instance, after the drag has ended
+    connect(m_model, &ProfileModel::instancesSwapped, this, [this](int application, int, int toRow) {
+        ui->windowTree->setCurrentIndex(m_model->instanceIndex(application, toRow));
+    }, Qt::QueuedConnection);
     // Window class and path stay in the model, but are not shown
     //ui->windowTree->setColumnHidden(ProfileModel::ClassColumn, true);
     //ui->windowTree->setColumnHidden(ProfileModel::PathColumn, true);

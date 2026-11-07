@@ -24,6 +24,8 @@ LayoutBridge::LayoutBridge(ProfileModel *model, QObject *parent)
         setSelection(-1, -1);
         emit layoutChanged();
     });
+    // Swapped instances: other windows are in these rows now
+    connect(m_model, &ProfileModel::instancesSwapped, this, &LayoutBridge::layoutChanged);
     connect(m_model, &QAbstractItemModel::rowsRemoved, this, [this] {
         setSelection(-1, -1);
         emit layoutChanged();
