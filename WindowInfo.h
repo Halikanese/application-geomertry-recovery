@@ -60,7 +60,7 @@ struct InstanceInfo
 
     // Which properties a saved window requires of an open window to be
     // matched to it; without any, windows are matched in instance order
-    bool matchInstance = false;
+    bool matchInstance = true;
     bool matchClass = false;
     bool matchTitle = false;
 
