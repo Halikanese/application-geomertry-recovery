@@ -27,9 +27,9 @@
 #include <QAbstractItemModel>
 
 // Saved applications of a profile as a tree: on the top level the
-// applications (EXE, window class), below them their windows (instances).
-// Editable are the "Default geometry" and "Autostart" columns of the
-// instances.
+// applications (EXE), below them their windows (instances). Editable are the
+// check boxes of the instances: "Default geometry", "Autostart" and the
+// matching options in the "Instance", "Window class" and "Title" columns.
 class ProfileModel : public QAbstractItemModel
 {
     Q_OBJECT
@@ -37,14 +37,15 @@ class ProfileModel : public QAbstractItemModel
 public:
     enum Column {
         ApplicationColumn,
-        InstanceColumn,
         DefaultColumn,
         AutostartColumn,
+        InstanceColumn,
         StateColumn,
         WindowRectColumn,
         NormalRectColumn,
         MonitorColumn,
         ClassColumn,
+        TitleColumn,
         PathColumn,
         ColumnCount,
     };
@@ -57,6 +58,15 @@ public:
     // Removes an instance or, on the top level, the whole application
     void removeEntry(const QModelIndex &index);
 
+    // Rectangle shown and edited in the layout view: the window rectangle
+    // for normal windows, the restored (normal) position otherwise
+    static QRect editableRect(const InstanceInfo &instance);
+    // Changes the geometry of an instance without saving it yet
+    void setInstanceRect(int applicationRow, int instanceRow, const QRect &rect);
+    // Reports the changes made with setInstanceRect as profileEdited()
+    void finishGeometryEdit();
+    QModelIndex instanceIndex(int applicationRow, int instanceRow, int column = 0) const;
+
     QModelIndex index(int row, int column, const QModelIndex &parent = {}) const override;
     QModelIndex parent(const QModelIndex &child) const override;
     int rowCount(const QModelIndex &parent = {}) const override;
@@ -67,13 +77,27 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
 
+    // Drag and drop: dropping an instance on another instance of the same
+    // application swaps their instance numbers
+    Qt::DropActions supportedDropActions() const override;
+    QStringList mimeTypes() const override;
+    QMimeData *mimeData(const QModelIndexList &indexes) const override;
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex &parent) const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex &parent) override;
+
 signals:
-    // The user changed the profile (default geometry, autostart, removed entries)
+    // The user changed the profile (check boxes, removed entries)
     void profileEdited();
+    // Two instances of an application changed places; the rows stay sorted by
+    // number, so a dragged instance is now in row toRow
+    void instancesSwapped(int applicationRow, int fromRow, int toRow);
 
 private:
     QVariant applicationData(const ApplicationInfo &application, int column, int role) const;
     QVariant instanceData(const InstanceInfo &instance, int column, int role) const;
+    bool decodeInstance(const QMimeData *data, int &applicationRow, int &instanceRow) const;
 
     Profile m_profile;
 };

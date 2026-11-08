@@ -2,13 +2,18 @@
 
 #include <algorithm>
 
+#include <QDataStream>
 #include <QDir>
+#include <QMimeData>
+#include <QRegularExpression>
 
 namespace {
 
 // internalId of an index: 0 for applications, application row + 1 for
 // instances
 constexpr quintptr TopLevel = 0;
+
+const QString InstanceMimeType = QStringLiteral("application/x-agr-instance");
 
 QString rectText(const QRect &rect)
 {
@@ -68,6 +73,38 @@ void ProfileModel::removeEntry(const QModelIndex &index)
     emit profileEdited();
 }
 
+QRect ProfileModel::editableRect(const InstanceInfo &instance)
+{
+    return instance.state == WindowState::Normal ? instance.windowRect : instance.normalRect;
+}
+
+void ProfileModel::setInstanceRect(int applicationRow, int instanceRow, const QRect &rect)
+{
+    if (applicationRow < 0 || applicationRow >= m_profile.applications.size())
+        return;
+    QList<InstanceInfo> &instances = m_profile.applications[applicationRow].instances;
+    if (instanceRow < 0 || instanceRow >= instances.size())
+        return;
+
+    // A normal window is placed with its window rectangle; minimized and
+    // maximized windows get their restored position from normalRect
+    InstanceInfo &instance = instances[instanceRow];
+    if (instance.state == WindowState::Normal)
+        instance.windowRect = rect;
+    instance.normalRect = rect;
+    emit dataChanged(instanceIndex(applicationRow, instanceRow, WindowRectColumn),
+                     instanceIndex(applicationRow, instanceRow, NormalRectColumn), {Qt::DisplayRole});
+}
+
+void ProfileModel::finishGeometryEdit()
+{
+    emit profileEdited();
+}
+
+QModelIndex ProfileModel::instanceIndex(int applicationRow, int instanceRow, int column) const
+{
+    return index(instanceRow, column, index(applicationRow, 0));
+}
 QModelIndex ProfileModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent))
@@ -116,8 +153,6 @@ QVariant ProfileModel::applicationData(const ApplicationInfo &application, int c
             return application.processName;
         case InstanceColumn:
             return application.instances.size();
-        case ClassColumn:
-            return application.className;
         case PathColumn:
             return QDir::toNativeSeparators(application.executablePath);
         default:
@@ -135,6 +170,21 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
         return instance.defaultGeometry ? Qt::Checked : Qt::Unchecked;
     if (role == Qt::CheckStateRole && column == AutostartColumn)
         return instance.autostart ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::CheckStateRole && column == InstanceColumn)
+        return instance.matchInstance ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::CheckStateRole && column == ClassColumn)
+        return instance.matchClass ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::CheckStateRole && column == TitleColumn)
+        return instance.matchTitle ? Qt::Checked : Qt::Unchecked;
+    if (role == Qt::ToolTipRole && column == TitleColumn) {
+        const QRegularExpression expression(instance.title);
+        if (instance.matchTitle && !expression.isValid())
+            return tr("%1\nNo valid regular expression (%2), only the same title matches.")
+                .arg(instance.title, expression.errorString());
+        return instance.title;
+    }
+    if (role == Qt::EditRole && column == TitleColumn)
+        return instance.title;
     if (role != Qt::DisplayRole)
         return {};
 
@@ -149,6 +199,10 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
         return rectText(instance.normalRect);
     case MonitorColumn:
         return instance.monitorName;
+    case ClassColumn:
+        return instance.className;
+    case TitleColumn:
+        return instance.title;
     default:
         break;
     }
@@ -157,15 +211,44 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
 
 bool ProfileModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (!index.isValid() || role != Qt::CheckStateRole)
+    if (!index.isValid() || index.internalId() == TopLevel)
         return false;
 
-    if (index.internalId() == TopLevel)
+    InstanceInfo &instance = m_profile.applications[int(index.internalId() - 1)].instances[index.row()];
+
+    // The title is compared with the open windows, also as a regular expression
+    if (role == Qt::EditRole && index.column() == TitleColumn) {
+        const QString title = value.toString();
+        if (title == instance.title)
+            return false;
+        instance.title = title;
+        emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole});
+        emit profileEdited();
+        return true;
+    }
+    if (role != Qt::CheckStateRole)
         return false;
 
-    if (index.column() == AutostartColumn) {
-        InstanceInfo &instance = m_profile.applications[int(index.internalId() - 1)].instances[index.row()];
-        instance.autostart = value.value<Qt::CheckState>() == Qt::Checked;
+    // Check boxes that only concern this instance
+    bool *flag = nullptr;
+    switch (index.column()) {
+    case AutostartColumn:
+        flag = &instance.autostart;
+        break;
+    case InstanceColumn:
+        flag = &instance.matchInstance;
+        break;
+    case ClassColumn:
+        flag = &instance.matchClass;
+        break;
+    case TitleColumn:
+        flag = &instance.matchTitle;
+        break;
+    default:
+        break;
+    }
+    if (flag) {
+        *flag = value.value<Qt::CheckState>() == Qt::Checked;
         emit dataChanged(index, index, {Qt::CheckStateRole});
         emit profileEdited();
         return true;
@@ -200,9 +283,22 @@ Qt::ItemFlags ProfileModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::NoItemFlags;
     Qt::ItemFlags result = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-    if (index.internalId() != TopLevel
-        && (index.column() == DefaultColumn || index.column() == AutostartColumn))
-        result |= Qt::ItemIsUserCheckable;
+    if (index.internalId() != TopLevel) {
+        result |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
+        switch (index.column()) {
+        case InstanceColumn:
+        case DefaultColumn:
+        case AutostartColumn:
+        case ClassColumn:
+            result |= Qt::ItemIsUserCheckable;
+            break;
+        case TitleColumn:
+            result |= Qt::ItemIsUserCheckable | Qt::ItemIsEditable;
+            break;
+        default:
+            break;
+        }
+    }
     return result;
 }
 
@@ -214,6 +310,14 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
     if (role == Qt::ToolTipRole && section == DefaultColumn)
         return tr("Used for further windows of the application when all its saved entries are "
                   "in use. At most one per application.");
+    if (role == Qt::ToolTipRole && section == InstanceColumn)
+        return tr("Checked: only an open window with the same instance number is used for this entry.");
+    if (role == Qt::ToolTipRole && section == ClassColumn)
+        return tr("Checked: only an open window with the same window class is used for this entry.");
+    if (role == Qt::ToolTipRole && section == TitleColumn)
+        return tr("Checked: only an open window with the same title is used for this entry. The title "
+                  "can be edited (double click) and may be a regular expression for the whole title, "
+                  "e.g. \".* - Editor\".");
     if (role == Qt::ToolTipRole && section == AutostartColumn)
         return tr("Start the application for this window when the profile is loaded and the window is not open.");
     if (role != Qt::DisplayRole)
@@ -238,10 +342,85 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
         return tr("Monitor");
     case ClassColumn:
         return tr("Window class");
+    case TitleColumn:
+        return tr("Title");
     case PathColumn:
         return tr("Path");
     default:
         break;
     }
     return {};
+}
+
+Qt::DropActions ProfileModel::supportedDropActions() const
+{
+    return Qt::MoveAction;
+}
+
+QStringList ProfileModel::mimeTypes() const
+{
+    return {InstanceMimeType};
+}
+
+QMimeData *ProfileModel::mimeData(const QModelIndexList &indexes) const
+{
+    for (const QModelIndex &index : indexes) {
+        if (!index.isValid() || index.internalId() == TopLevel)
+            continue;
+        QByteArray encoded;
+        QDataStream stream(&encoded, QIODevice::WriteOnly);
+        stream << int(index.internalId() - 1) << index.row();
+        auto *data = new QMimeData;
+        data->setData(InstanceMimeType, encoded);
+        return data;
+    }
+    return nullptr;
+}
+
+bool ProfileModel::decodeInstance(const QMimeData *data, int &applicationRow, int &instanceRow) const
+{
+    if (!data || !data->hasFormat(InstanceMimeType))
+        return false;
+    QByteArray encoded = data->data(InstanceMimeType);
+    QDataStream stream(&encoded, QIODevice::ReadOnly);
+    stream >> applicationRow >> instanceRow;
+    return applicationRow >= 0 && applicationRow < m_profile.applications.size() && instanceRow >= 0
+           && instanceRow < m_profile.applications.at(applicationRow).instances.size();
+}
+
+bool ProfileModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                                   const QModelIndex &parent) const
+{
+    Q_UNUSED(column)
+    // Only directly on another instance of the same application
+    int applicationRow = -1;
+    int instanceRow = -1;
+    return action == Qt::MoveAction && row < 0 && parent.isValid() && parent.internalId() != TopLevel
+           && decodeInstance(data, applicationRow, instanceRow)
+           && applicationRow == int(parent.internalId() - 1) && instanceRow != parent.row();
+}
+
+bool ProfileModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                                const QModelIndex &parent)
+{
+    if (!canDropMimeData(data, action, row, column, parent))
+        return false;
+
+    int applicationRow = -1;
+    int fromRow = -1;
+    decodeInstance(data, applicationRow, fromRow);
+    const int toRow = parent.row();
+
+    // The instances change places and numbers; settings and geometry stay with them
+    QList<InstanceInfo> &instances = m_profile.applications[applicationRow].instances;
+    std::swap(instances[fromRow].instance, instances[toRow].instance);
+    instances.swapItemsAt(fromRow, toRow);
+
+    for (const int changed : {fromRow, toRow}) {
+        emit dataChanged(instanceIndex(applicationRow, changed, 0),
+                         instanceIndex(applicationRow, changed, ColumnCount - 1));
+    }
+    emit instancesSwapped(applicationRow, fromRow, toRow);
+    emit profileEdited();
+    return true;
 }

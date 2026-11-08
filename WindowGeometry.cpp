@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QHash>
+#include <QRegularExpression>
 
 #include <windows.h>
 #include <dwmapi.h>
@@ -26,6 +27,16 @@ QRect toQRect(const RECT &rect)
 RECT toRect(const QRect &rect)
 {
     return RECT{rect.left(), rect.top(), rect.left() + rect.width(), rect.top() + rect.height()};
+}
+
+QString windowText(HWND hwnd)
+{
+    const int length = GetWindowTextLengthW(hwnd);
+    if (length <= 0)
+        return QString();
+    std::wstring buffer(size_t(length) + 1, L'\0');
+    const int copied = GetWindowTextW(hwnd, buffer.data(), length + 1);
+    return QString::fromWCharArray(buffer.data(), copied);
 }
 
 QString windowClass(HWND hwnd)
@@ -123,6 +134,7 @@ QList<LiveWindow> enumerateWindows()
         live.hwnd = hwnd;
         WindowInfo &info = live.info;
         info.className = windowClass(hwnd);
+        info.title = windowText(hwnd);
 
         if (info.className == QLatin1String("ApplicationFrameWindow")) {
             if (const DWORD appPid = uwpProcessId(hwnd, pid))
@@ -193,8 +205,33 @@ bool applyPlacement(HWND hwnd, const WindowInfo &info, UINT showCmd)
     return SetWindowPlacement(hwnd, &placement);
 }
 
+// true if the window already has the saved state and geometry
+bool isAlreadyPlaced(HWND hwnd, const WindowInfo &info)
+{
+    WINDOWPLACEMENT placement{};
+    placement.length = sizeof(placement);
+    RECT rect{};
+    if (!GetWindowPlacement(hwnd, &placement) || !GetWindowRect(hwnd, &rect))
+        return false;
+    const QRect normalRect = toQRect(placement.rcNormalPosition);
+
+    switch (info.state) {
+    case WindowState::Maximized:
+        return IsZoomed(hwnd) && toQRect(rect) == info.windowRect && normalRect == info.normalRect;
+    case WindowState::Minimized:
+        return IsIconic(hwnd) && normalRect == info.normalRect;
+    case WindowState::Normal:
+        break;
+    }
+    return !IsZoomed(hwnd) && !IsIconic(hwnd) && toQRect(rect) == info.windowRect;
+}
+
 bool restoreWindow(HWND hwnd, const WindowInfo &info)
 {
+    // Setting the placement makes a window flicker, even if nothing changes
+    if (isAlreadyPlaced(hwnd, info))
+        return true;
+
     // Show normal first so that a maximized window can also change
     // monitors.
     if (!applyPlacement(hwnd, info, SW_SHOWNOACTIVATE))
@@ -278,8 +315,21 @@ struct MatchResult
     QList<WindowInfo> missing;
 };
 
+// The saved title matches the same title or, as a regular expression, the
+// whole title. Captured titles with characters like "(" or "." still match
+// themselves this way.
+bool titleMatches(const QString &saved, const QString &title)
+{
+    if (saved == title)
+        return true;
+    const QRegularExpression expression(QRegularExpression::anchoredPattern(saved));
+    return expression.isValid() && expression.match(title).hasMatch();
+}
+
 // Assigns saved windows to open windows of the same application in instance
-// order. Windows in excludedHandles are ignored.
+// order. A saved window only takes an open window whose instance number,
+// window class or title match where it requires this. Windows in
+// excludedHandles are ignored.
 MatchResult matchWindows(const QList<WindowInfo> &windows, const QSet<quintptr> &excludedHandles)
 {
     MatchResult result;
@@ -307,12 +357,27 @@ MatchResult matchWindows(const QList<WindowInfo> &windows, const QSet<quintptr> 
         });
         QList<LiveWindow> candidates = available.value(key);
 
-        // Assigned in instance order
-        for (qsizetype i = 0; i < saved.size(); ++i) {
-            if (candidates.isEmpty())
-                result.missing.append(saved.at(i));
-            else
-                result.matches.append({candidates.takeFirst().hwnd, saved.at(i)});
+        // Entries that require more properties first, so that they get their
+        // window before the less specific entries take it
+        std::stable_sort(saved.begin(), saved.end(), [](const WindowInfo &a, const WindowInfo &b) {
+            const auto constraints = [](const WindowInfo &info) {
+                return int(info.matchInstance) + int(info.matchClass) + int(info.matchTitle);
+            };
+            return constraints(a) > constraints(b);
+        });
+
+        for (const WindowInfo &info : std::as_const(saved)) {
+            const auto it = std::find_if(candidates.begin(), candidates.end(), [&](const LiveWindow &live) {
+                return (!info.matchInstance || live.info.instance == info.instance)
+                       && (!info.matchClass || live.info.className == info.className)
+                       && (!info.matchTitle || titleMatches(info.title, live.info.title));
+            });
+            if (it == candidates.end()) {
+                result.missing.append(info);
+            } else {
+                result.matches.append({it->hwnd, info});
+                candidates.erase(it);
+            }
         }
     }
     return result;

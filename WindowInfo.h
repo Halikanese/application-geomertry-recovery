@@ -30,6 +30,7 @@
 #include <QPoint>
 #include <QRect>
 #include <QString>
+#include <QStringList>
 
 // State of a window, corresponds to WINDOWPLACEMENT::showCmd
 enum class WindowState {
@@ -38,17 +39,15 @@ enum class WindowState {
     Maximized,
 };
 
-// Identifies an application window: the EXE and the window class
+// Identifies an application: the EXE
 struct ApplicationIdentity
 {
     QString executablePath;   // Full path of the EXE
     QString processName;      // File name of the EXE
-    QString className;        // Window class
 
-    // Key for matching on restore
+    // Key for matching on restore and for grouping the saved windows
     QString matchKey() const { return executablePath.toLower(); }
-    // Key for grouping the saved windows into applications
-    QString groupKey() const { return executablePath.toLower() + u'|' + className; }
+    QString groupKey() const { return matchKey(); }
 };
 
 // Geometry of one window (instance) of an application. Coordinates are
@@ -56,6 +55,14 @@ struct ApplicationIdentity
 struct InstanceInfo
 {
     int instance = 0;         // Sequence number among windows of the same application
+    QString className;        // Window class
+    QString title;            // Window title
+
+    // Which properties a saved window requires of an open window to be
+    // matched to it; without any, windows are matched in instance order
+    bool matchInstance = true;
+    bool matchClass = false;
+    bool matchTitle = false;
 
     WindowState state = WindowState::Normal;
     QRect windowRect;         // Actual rectangle in screen coordinates (GetWindowRect)
@@ -96,6 +103,20 @@ struct MonitorInfo
     int dpi = 96;
     bool primary = false;
 };
+
+// The monitor rectangles in a fixed order. Device names are left out, because
+// they differ between local and Remote Desktop sessions.
+inline QStringList monitorSignature(const QList<MonitorInfo> &monitors)
+{
+    QStringList signature;
+    for (const MonitorInfo &monitor : monitors) {
+        const QRect &rect = monitor.geometry;
+        signature.append(QStringLiteral("%1,%2,%3,%4").arg(rect.x()).arg(rect.y())
+                             .arg(rect.width()).arg(rect.height()));
+    }
+    signature.sort();
+    return signature;
+}
 
 struct Profile
 {

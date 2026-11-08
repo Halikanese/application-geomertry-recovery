@@ -2,12 +2,9 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en" sourcelanguage="en">
 <context>
-    <name>ProfileModel</name>
-</context>
-<context>
     <name>TrayController</name>
     <message numerus="yes">
-        <location filename="../TrayController.cpp" line="104"/>
+        <location filename="../TrayController.cpp" line="111"/>
         <source>%n window(s) found. Profile name:</source>
         <translation>
             <numerusform>%n window found. Profile name:</numerusform>
@@ -15,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../TrayController.cpp" line="183"/>
+        <location filename="../TrayController.cpp" line="193"/>
         <source>Starting %n application(s)…</source>
         <translation>
             <numerusform>Starting %n application…</numerusform>

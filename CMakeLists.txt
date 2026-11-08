@@ -5,7 +5,7 @@ project(ApplicationGeometryRecovery VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.12 REQUIRED COMPONENTS Widgets Network LinguistTools)
+find_package(Qt6 6.12 REQUIRED COMPONENTS Widgets Network Quick QuickWidgets LinguistTools)
 
 # GitHub repository with the releases for the update check, as owner/name
 set(AGR_UPDATE_REPOSITORY "Halikanese/application-geomertry-recovery" CACHE STRING
@@ -38,8 +38,21 @@ qt_add_executable(ApplicationGeometryRecovery
     ApplicationStarter.cpp
     WindowWatcher.h
     WindowWatcher.cpp
+    DisplayWatcher.h
+    DisplayWatcher.cpp
+    ProfileNotification.h
+    ProfileNotification.cpp
     UpdateChecker.h
     UpdateChecker.cpp
+    LayoutBridge.h
+    LayoutBridge.cpp
+)
+
+# Layout view below the window list, loaded from
+# qrc:/qt/qml/ApplicationGeometryRecovery/LayoutView.qml
+qt_add_qml_module(ApplicationGeometryRecovery
+    URI ApplicationGeometryRecovery
+    QML_FILES LayoutView.qml
 )
 
 set_target_properties(ApplicationGeometryRecovery PROPERTIES
@@ -47,7 +60,7 @@ set_target_properties(ApplicationGeometryRecovery PROPERTIES
 )
 
 target_link_libraries(ApplicationGeometryRecovery
-    PRIVATE Qt6::Widgets Qt6::Network
+    PRIVATE Qt6::Widgets Qt6::Network Qt6::Quick Qt6::QuickWidgets
 )
 
 # Version of the application (also of the installer) and update source
@@ -94,7 +107,7 @@ install(TARGETS ApplicationGeometryRecovery
 
 # On install, copies the required Qt DLLs, plugins and
 # MinGW runtime libraries next to the EXE (windeployqt)
-qt_generate_deploy_app_script(
+qt_generate_deploy_qml_app_script(
     TARGET ApplicationGeometryRecovery
     OUTPUT_SCRIPT deployScript
     NO_UNSUPPORTED_PLATFORM_ERROR

@@ -24,10 +24,12 @@
 
 #include <QObject>
 #include <QPointer>
+#include <QStringList>
+#include <QSystemTrayIcon>
 
 class QMenu;
-class QSystemTrayIcon;
 class MainWindow;
+class ProfileNotification;
 class ProfileStore;
 
 // System tray icon with the menu items Open, Save and Load
@@ -48,10 +50,16 @@ private:
     void showResult(const QString &title, QString text, const QStringList &messages, bool warning);
     void rebuildLoadMenu();
     void placeNewWindow(quintptr handle);
+    void askForProfile();
+    void loadOfferedProfile();
+    void showMessage(const QString &title, const QString &text, QSystemTrayIcon::MessageIcon icon, int timeout);
 
     ProfileStore *m_store;
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_menu;
     QMenu *m_loadMenu;
     QPointer<MainWindow> m_mainWindow;
+    // Profile offered by the last message about a display change
+    QString m_offeredProfile;
+    QPointer<ProfileNotification> m_profileNotification;
 };

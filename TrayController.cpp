@@ -1,8 +1,10 @@
 #include "TrayController.h"
 
 #include "AppIcon.h"
+#include "DisplayWatcher.h"
 #include "ApplicationStarter.h"
 #include "MainWindow.h"
+#include "ProfileNotification.h"
 #include "ProfileStore.h"
 #include "WindowGeometry.h"
 #include "WindowWatcher.h"
@@ -37,6 +39,11 @@ TrayController::TrayController(ProfileStore *store, QObject *parent)
     // Windows of applications started later get the geometry of the active profile
     auto *watcher = new WindowWatcher(this);
     connect(watcher, &WindowWatcher::windowOpened, this, &TrayController::placeNewWindow);
+
+    // When the monitors change, offer the profiles made for them
+    auto *displayWatcher = new DisplayWatcher(this);
+    connect(displayWatcher, &DisplayWatcher::configurationChanged, this, &TrayController::askForProfile);
+    connect(m_trayIcon, &QSystemTrayIcon::messageClicked, this, &TrayController::loadOfferedProfile);
 
     // A left click shows the menu as well
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
@@ -125,13 +132,16 @@ void TrayController::saveProfile()
         for (const WindowInfo &window : std::as_const(windows))
             running.insert(window.executablePath.toLower());
         for (const WindowInfo &window : m_store->profile(profile.name).windows()) {
-            // Default geometry and autostart move to the captured window with
-            // the same application and instance number
+            // Default geometry, autostart and the matching options move to the
+            // captured window with the same application and instance number
             if (running.contains(window.executablePath.toLower())) {
                 for (WindowInfo &captured : windows) {
                     if (captured.matchKey() == window.matchKey() && captured.instance == window.instance) {
                         captured.defaultGeometry = window.defaultGeometry;
                         captured.autostart = window.autostart;
+                        captured.matchInstance = window.matchInstance;
+                        captured.matchClass = window.matchClass;
+                        captured.matchTitle = window.matchTitle;
                     }
                 }
             }
@@ -145,16 +155,16 @@ void TrayController::saveProfile()
     profile.setWindows(windows);
 
     m_store->store(profile);
-    m_trayIcon->showMessage(tr("Profile saved"),
-                            updated ? tr("\"%1\" updated: %2 windows captured, %3 windows of applications "
-                                         "not running kept.")
-                                          .arg(profile.name)
-                                          .arg(captured)
-                                          .arg(kept)
-                                    : tr("\"%1\" created, %2 windows.")
-                                          .arg(profile.name)
-                                          .arg(captured),
-                            QSystemTrayIcon::Information, 4000);
+    showMessage(tr("Profile saved"),
+                updated ? tr("\"%1\" updated: %2 windows captured, %3 windows of applications "
+                             "not running kept.")
+                              .arg(profile.name)
+                              .arg(captured)
+                              .arg(kept)
+                        : tr("\"%1\" created, %2 windows.")
+                              .arg(profile.name)
+                              .arg(captured),
+                QSystemTrayIcon::Information, 4000);
 }
 
 void TrayController::restoreProfile(const QString &name)
@@ -209,8 +219,7 @@ void TrayController::showResult(const QString &title, QString text, const QStrin
     if (messages.size() > details.size())
         text += tr("\n… and %1 more").arg(messages.size() - details.size());
 
-    m_trayIcon->showMessage(title, text,
-                            warning ? QSystemTrayIcon::Warning : QSystemTrayIcon::Information, 6000);
+    showMessage(title, text, warning ? QSystemTrayIcon::Warning : QSystemTrayIcon::Information, 6000);
 }
 
 void TrayController::placeNewWindow(quintptr handle)
@@ -218,4 +227,54 @@ void TrayController::placeNewWindow(quintptr handle)
     const QString name = m_store->activeProfile();
     if (!name.isEmpty())
         WindowGeometry::placeNewWindow(handle, m_store->profile(name).windows());
+}
+
+void TrayController::askForProfile()
+{
+    const QStringList current = monitorSignature(WindowGeometry::monitors());
+    QStringList matching;
+    for (const QString &name : m_store->names())
+    {
+        if (monitorSignature(m_store->profile(name).monitors) == current)
+            matching.append(name);
+    }
+
+    // A question about the previous configuration is out of date
+    if (m_profileNotification)
+        m_profileNotification->close();
+
+    if (matching.size() == 1)
+    {
+        // A click on the notification loads the profile, see loadOfferedProfile()
+        showMessage(tr("Display Configuration Changed"),
+                    tr("Click here to load the profile \"%1\".").arg(matching.first()),
+                    QSystemTrayIcon::Information, 10000);
+        m_offeredProfile = matching.first();
+    }
+    else if (matching.size() > 1)
+    {
+        // The messages of the tray icon cannot contain controls, so several
+        // profiles are offered in an own notification with a combo box
+        auto *notification = new ProfileNotification(tr("Display Configuration Changed"),
+                                                     tr("Several profiles match. Which one should be loaded?"),
+                                                     matching, m_store->activeProfile());
+        m_profileNotification = notification;
+        connect(notification, &ProfileNotification::profileSelected, this, &TrayController::restoreProfile);
+        notification->popup();
+    }
+}
+
+void TrayController::loadOfferedProfile()
+{
+    const QString name = std::exchange(m_offeredProfile, {});
+    if (!name.isEmpty())
+        restoreProfile(name);
+}
+
+void TrayController::showMessage(const QString &title, const QString &text, QSystemTrayIcon::MessageIcon icon,
+                                 int timeout)
+{
+    // Only the notification with the profile question loads a profile on a click
+    m_offeredProfile.clear();
+    m_trayIcon->showMessage(title, text, icon, timeout);
 }
