@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QHash>
+#include <QRegularExpression>
 
 #include <windows.h>
 #include <dwmapi.h>
@@ -314,6 +315,17 @@ struct MatchResult
     QList<WindowInfo> missing;
 };
 
+// The saved title matches the same title or, as a regular expression, the
+// whole title. Captured titles with characters like "(" or "." still match
+// themselves this way.
+bool titleMatches(const QString &saved, const QString &title)
+{
+    if (saved == title)
+        return true;
+    const QRegularExpression expression(QRegularExpression::anchoredPattern(saved));
+    return expression.isValid() && expression.match(title).hasMatch();
+}
+
 // Assigns saved windows to open windows of the same application in instance
 // order. A saved window only takes an open window whose instance number,
 // window class or title match where it requires this. Windows in
@@ -358,7 +370,7 @@ MatchResult matchWindows(const QList<WindowInfo> &windows, const QSet<quintptr> 
             const auto it = std::find_if(candidates.begin(), candidates.end(), [&](const LiveWindow &live) {
                 return (!info.matchInstance || live.info.instance == info.instance)
                        && (!info.matchClass || live.info.className == info.className)
-                       && (!info.matchTitle || live.info.title == info.title);
+                       && (!info.matchTitle || titleMatches(info.title, live.info.title));
             });
             if (it == candidates.end()) {
                 result.missing.append(info);

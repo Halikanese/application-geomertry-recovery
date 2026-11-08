@@ -105,82 +105,89 @@
 <context>
     <name>ProfileModel</name>
     <message>
-        <location filename="../ProfileModel.cpp" line="290"/>
+        <location filename="../ProfileModel.cpp" line="311"/>
         <source>Used for further windows of the application when all its saved entries are in use. At most one per application.</source>
         <translation>Wird für weitere Fenster der Anwendung verwendet, wenn alle gespeicherten Einträge belegt sind. Höchstens einer pro Anwendung.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="293"/>
+        <location filename="../ProfileModel.cpp" line="314"/>
         <source>Checked: only an open window with the same instance number is used for this entry.</source>
         <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit derselben Instanznummer verwendet.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="295"/>
+        <location filename="../ProfileModel.cpp" line="316"/>
         <source>Checked: only an open window with the same window class is used for this entry.</source>
         <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit derselben Fensterklasse verwendet.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="297"/>
-        <source>Checked: only an open window with the same title is used for this entry.</source>
-        <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit demselben Titel verwendet.</translation>
+        <location filename="../ProfileModel.cpp" line="182"/>
+        <source>%1
+No valid regular expression (%2), only the same title matches.</source>
+        <translation>%1
+Kein gültiger regulärer Ausdruck (%2), nur derselbe Titel passt.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="299"/>
+        <location filename="../ProfileModel.cpp" line="318"/>
+        <source>Checked: only an open window with the same title is used for this entry. The title can be edited (double click) and may be a regular expression for the whole title, e.g. &quot;.* - Editor&quot;.</source>
+        <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit demselben Titel verwendet. Der Titel lässt sich bearbeiten (Doppelklick) und darf ein regulärer Ausdruck für den ganzen Titel sein, z. B. „.* - Editor“.</translation>
+    </message>
+    <message>
+        <location filename="../ProfileModel.cpp" line="322"/>
         <source>Start the application for this window when the profile is loaded and the window is not open.</source>
         <translation>Startet die Anwendung für dieses Fenster beim Laden des Profils, wenn das Fenster nicht offen ist.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="305"/>
+        <location filename="../ProfileModel.cpp" line="328"/>
         <source>Application</source>
         <translation>Anwendung</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="307"/>
+        <location filename="../ProfileModel.cpp" line="330"/>
         <source>Instance</source>
         <translation>Instanz</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="309"/>
+        <location filename="../ProfileModel.cpp" line="332"/>
         <source>Default geometry</source>
         <translation>Standardgeometrie</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="311"/>
+        <location filename="../ProfileModel.cpp" line="334"/>
         <source>Autostart</source>
         <translation>Autostart</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="313"/>
+        <location filename="../ProfileModel.cpp" line="336"/>
         <source>State</source>
         <translation>Zustand</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="315"/>
+        <location filename="../ProfileModel.cpp" line="338"/>
         <source>Window (x, y  W × H)</source>
         <translation>Fenster (x, y  B × H)</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="317"/>
+        <location filename="../ProfileModel.cpp" line="340"/>
         <source>Normal position</source>
         <translation>Normalposition</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="319"/>
+        <location filename="../ProfileModel.cpp" line="342"/>
         <source>Monitor</source>
         <translation>Monitor</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="321"/>
+        <location filename="../ProfileModel.cpp" line="344"/>
         <source>Window class</source>
         <translation>Fensterklasse</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="323"/>
+        <location filename="../ProfileModel.cpp" line="346"/>
         <source>Title</source>
         <translation>Titel</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="325"/>
+        <location filename="../ProfileModel.cpp" line="348"/>
         <source>Path</source>
         <translation>Pfad</translation>
     </message>
@@ -451,17 +458,17 @@ Jetzt herunterladen und installieren? Application Geometry Recovery wird für di
 <context>
     <name>WindowGeometry</name>
     <message>
-        <location filename="../WindowGeometry.cpp" line="425"/>
+        <location filename="../WindowGeometry.cpp" line="437"/>
         <source>Not found: %1</source>
         <translation>Nicht gefunden: %1</translation>
     </message>
     <message>
-        <location filename="../WindowGeometry.cpp" line="432"/>
+        <location filename="../WindowGeometry.cpp" line="444"/>
         <source>Not responding: %1</source>
         <translation>Reagiert nicht: %1</translation>
     </message>
     <message>
-        <location filename="../WindowGeometry.cpp" line="443"/>
+        <location filename="../WindowGeometry.cpp" line="455"/>
         <source>Failed (error %1): %2</source>
         <translation>Fehlgeschlagen (Fehler %1): %2</translation>
     </message>

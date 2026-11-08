@@ -5,6 +5,7 @@
 #include <QDataStream>
 #include <QDir>
 #include <QMimeData>
+#include <QRegularExpression>
 
 namespace {
 
@@ -175,7 +176,14 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
         return instance.matchClass ? Qt::Checked : Qt::Unchecked;
     if (role == Qt::CheckStateRole && column == TitleColumn)
         return instance.matchTitle ? Qt::Checked : Qt::Unchecked;
-    if (role == Qt::ToolTipRole && column == TitleColumn)
+    if (role == Qt::ToolTipRole && column == TitleColumn) {
+        const QRegularExpression expression(instance.title);
+        if (instance.matchTitle && !expression.isValid())
+            return tr("%1\nNo valid regular expression (%2), only the same title matches.")
+                .arg(instance.title, expression.errorString());
+        return instance.title;
+    }
+    if (role == Qt::EditRole && column == TitleColumn)
         return instance.title;
     if (role != Qt::DisplayRole)
         return {};
@@ -203,14 +211,25 @@ QVariant ProfileModel::instanceData(const InstanceInfo &instance, int column, in
 
 bool ProfileModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (!index.isValid() || role != Qt::CheckStateRole)
+    if (!index.isValid() || index.internalId() == TopLevel)
         return false;
 
-    if (index.internalId() == TopLevel)
+    InstanceInfo &instance = m_profile.applications[int(index.internalId() - 1)].instances[index.row()];
+
+    // The title is compared with the open windows, also as a regular expression
+    if (role == Qt::EditRole && index.column() == TitleColumn) {
+        const QString title = value.toString();
+        if (title == instance.title)
+            return false;
+        instance.title = title;
+        emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole});
+        emit profileEdited();
+        return true;
+    }
+    if (role != Qt::CheckStateRole)
         return false;
 
     // Check boxes that only concern this instance
-    InstanceInfo &instance = m_profile.applications[int(index.internalId() - 1)].instances[index.row()];
     bool *flag = nullptr;
     switch (index.column()) {
     case AutostartColumn:
@@ -271,8 +290,10 @@ Qt::ItemFlags ProfileModel::flags(const QModelIndex &index) const
         case DefaultColumn:
         case AutostartColumn:
         case ClassColumn:
-        case TitleColumn:
             result |= Qt::ItemIsUserCheckable;
+            break;
+        case TitleColumn:
+            result |= Qt::ItemIsUserCheckable | Qt::ItemIsEditable;
             break;
         default:
             break;
@@ -294,7 +315,9 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
     if (role == Qt::ToolTipRole && section == ClassColumn)
         return tr("Checked: only an open window with the same window class is used for this entry.");
     if (role == Qt::ToolTipRole && section == TitleColumn)
-        return tr("Checked: only an open window with the same title is used for this entry.");
+        return tr("Checked: only an open window with the same title is used for this entry. The title "
+                  "can be edited (double click) and may be a regular expression for the whole title, "
+                  "e.g. \".* - Editor\".");
     if (role == Qt::ToolTipRole && section == AutostartColumn)
         return tr("Start the application for this window when the profile is loaded and the window is not open.");
     if (role != Qt::DisplayRole)
