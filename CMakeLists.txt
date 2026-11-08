@@ -38,6 +38,10 @@ qt_add_executable(ApplicationGeometryRecovery
     ApplicationStarter.cpp
     WindowWatcher.h
     WindowWatcher.cpp
+    DisplayWatcher.h
+    DisplayWatcher.cpp
+    ProfileNotification.h
+    ProfileNotification.cpp
     UpdateChecker.h
     UpdateChecker.cpp
     LayoutBridge.h

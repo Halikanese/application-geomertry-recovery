@@ -52,52 +52,52 @@
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="45"/>
+        <location filename="../MainWindow.cpp" line="62"/>
         <source>File: %1</source>
         <translation>Datei: %1</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="99"/>
+        <location filename="../MainWindow.cpp" line="128"/>
         <source>No profile selected.</source>
         <translation>Kein Profil ausgewählt.</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="108"/>
+        <location filename="../MainWindow.cpp" line="146"/>
         <source>%1: %2, %3 dpi%4</source>
         <translation>%1: %2, %3 dpi%4</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="111"/>
+        <location filename="../MainWindow.cpp" line="149"/>
         <source> (primary)</source>
         <translation> (primär)</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="114"/>
+        <location filename="../MainWindow.cpp" line="152"/>
         <source>&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;Saved: %2 on %3 (%4)&lt;br&gt;Monitors: %5&lt;br&gt;Windows: %6</source>
         <translation>&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;Gespeichert: %2 auf %3 (%4)&lt;br&gt;Monitore: %5&lt;br&gt;Fenster: %6</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="118"/>
+        <location filename="../MainWindow.cpp" line="156"/>
         <source>Remote Desktop</source>
         <translation>Remotedesktop</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="118"/>
+        <location filename="../MainWindow.cpp" line="156"/>
         <source>local</source>
         <translation>lokal</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="133"/>
+        <location filename="../MainWindow.cpp" line="204"/>
         <source>Delete Profile</source>
         <translation>Profil löschen</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="134"/>
+        <location filename="../MainWindow.cpp" line="205"/>
         <source>Delete profile &quot;%1&quot;?</source>
         <translation>Profil „%1“ löschen?</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="146"/>
+        <location filename="../MainWindow.cpp" line="217"/>
         <source>Delete entry</source>
         <translation>Eintrag löschen</translation>
     </message>
@@ -105,84 +105,102 @@
 <context>
     <name>ProfileModel</name>
     <message>
-        <location filename="../ProfileModel.cpp" line="253"/>
+        <location filename="../ProfileModel.cpp" line="290"/>
         <source>Used for further windows of the application when all its saved entries are in use. At most one per application.</source>
         <translation>Wird für weitere Fenster der Anwendung verwendet, wenn alle gespeicherten Einträge belegt sind. Höchstens einer pro Anwendung.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="256"/>
+        <location filename="../ProfileModel.cpp" line="293"/>
         <source>Checked: only an open window with the same instance number is used for this entry.</source>
         <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit derselben Instanznummer verwendet.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="258"/>
+        <location filename="../ProfileModel.cpp" line="295"/>
         <source>Checked: only an open window with the same window class is used for this entry.</source>
         <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit derselben Fensterklasse verwendet.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="260"/>
+        <location filename="../ProfileModel.cpp" line="297"/>
         <source>Checked: only an open window with the same title is used for this entry.</source>
         <translation>Angehakt: Für diesen Eintrag wird nur ein offenes Fenster mit demselben Titel verwendet.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="262"/>
+        <location filename="../ProfileModel.cpp" line="299"/>
         <source>Start the application for this window when the profile is loaded and the window is not open.</source>
         <translation>Startet die Anwendung für dieses Fenster beim Laden des Profils, wenn das Fenster nicht offen ist.</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="268"/>
+        <location filename="../ProfileModel.cpp" line="305"/>
         <source>Application</source>
         <translation>Anwendung</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="270"/>
+        <location filename="../ProfileModel.cpp" line="307"/>
         <source>Instance</source>
         <translation>Instanz</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="272"/>
+        <location filename="../ProfileModel.cpp" line="309"/>
         <source>Default geometry</source>
         <translation>Standardgeometrie</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="274"/>
+        <location filename="../ProfileModel.cpp" line="311"/>
         <source>Autostart</source>
         <translation>Autostart</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="276"/>
+        <location filename="../ProfileModel.cpp" line="313"/>
         <source>State</source>
         <translation>Zustand</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="278"/>
+        <location filename="../ProfileModel.cpp" line="315"/>
         <source>Window (x, y  W × H)</source>
         <translation>Fenster (x, y  B × H)</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="280"/>
+        <location filename="../ProfileModel.cpp" line="317"/>
         <source>Normal position</source>
         <translation>Normalposition</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="282"/>
+        <location filename="../ProfileModel.cpp" line="319"/>
         <source>Monitor</source>
         <translation>Monitor</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="284"/>
+        <location filename="../ProfileModel.cpp" line="321"/>
         <source>Window class</source>
         <translation>Fensterklasse</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="286"/>
+        <location filename="../ProfileModel.cpp" line="323"/>
         <source>Title</source>
         <translation>Titel</translation>
     </message>
     <message>
-        <location filename="../ProfileModel.cpp" line="288"/>
+        <location filename="../ProfileModel.cpp" line="325"/>
         <source>Path</source>
         <translation>Pfad</translation>
+    </message>
+</context>
+<context>
+    <name>ProfileNotification</name>
+    <message>
+        <location filename="../ProfileNotification.cpp" line="46"/>
+        <source>Close</source>
+        <translation>Schließen</translation>
+    </message>
+    <message>
+        <location filename="../ProfileNotification.cpp" line="55"/>
+        <source>Choose a profile…</source>
+        <translation>Profil auswählen…</translation>
+    </message>
+    <message>
+        <location filename="../ProfileNotification.cpp" line="60"/>
+        <source>%1 (active)</source>
+        <translation>%1 (aktiv)</translation>
     </message>
 </context>
 <context>
@@ -219,42 +237,42 @@
 <context>
     <name>TrayController</name>
     <message>
-        <location filename="../TrayController.cpp" line="24"/>
+        <location filename="../TrayController.cpp" line="26"/>
         <source>Open</source>
         <translation>Öffnen</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="25"/>
+        <location filename="../TrayController.cpp" line="27"/>
         <source>Save…</source>
         <translation>Speichern…</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="26"/>
+        <location filename="../TrayController.cpp" line="28"/>
         <source>Load</source>
         <translation>Laden</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="28"/>
+        <location filename="../TrayController.cpp" line="30"/>
         <source>Exit</source>
         <translation>Beenden</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="34"/>
+        <location filename="../TrayController.cpp" line="36"/>
         <source>Application Geometry Recovery</source>
         <translation>Application Geometry Recovery</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="78"/>
+        <location filename="../TrayController.cpp" line="85"/>
         <source>(no profiles)</source>
         <translation>(keine Profile)</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="101"/>
+        <location filename="../TrayController.cpp" line="108"/>
         <source>Save Profile</source>
         <translation>Profil speichern</translation>
     </message>
     <message numerus="yes">
-        <location filename="../TrayController.cpp" line="104"/>
+        <location filename="../TrayController.cpp" line="111"/>
         <source>%n window(s) found. Profile name:</source>
         <translation>
             <numerusform>%n Fenster gefunden. Name des Profils:</numerusform>
@@ -262,37 +280,37 @@
         </translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="108"/>
+        <location filename="../TrayController.cpp" line="115"/>
         <source>Remote Desktop</source>
         <translation>Remotedesktop</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="108"/>
+        <location filename="../TrayController.cpp" line="115"/>
         <source>Local</source>
         <translation>Lokal</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="151"/>
+        <location filename="../TrayController.cpp" line="158"/>
         <source>Profile saved</source>
         <translation>Profil gespeichert</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="152"/>
+        <location filename="../TrayController.cpp" line="159"/>
         <source>&quot;%1&quot; updated: %2 windows captured, %3 windows of applications not running kept.</source>
         <translation>„%1“ aktualisiert: %2 Fenster erfasst, %3 Fenster nicht laufender Anwendungen beibehalten.</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="157"/>
+        <location filename="../TrayController.cpp" line="164"/>
         <source>&quot;%1&quot; created, %2 windows.</source>
         <translation>„%1“ angelegt, %2 Fenster.</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="181"/>
+        <location filename="../TrayController.cpp" line="188"/>
         <source>%1 restored, %2 not found, %3 failed.</source>
         <translation>%1 wiederhergestellt, %2 nicht gefunden, %3 fehlgeschlagen.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../TrayController.cpp" line="186"/>
+        <location filename="../TrayController.cpp" line="193"/>
         <source>Starting %n application(s)…</source>
         <translation>
             <numerusform>Starte %n Anwendung…</numerusform>
@@ -300,20 +318,36 @@
         </translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="199"/>
+        <location filename="../TrayController.cpp" line="206"/>
         <source>%1 applications started, %2 windows placed.</source>
         <translation>%1 Anwendungen gestartet, %2 Fenster platziert.</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="213"/>
+        <location filename="../TrayController.cpp" line="220"/>
         <source>
 … and %1 more</source>
         <translation>
 … und %1 weitere</translation>
     </message>
     <message>
-        <location filename="../TrayController.cpp" line="187"/>
-        <location filename="../TrayController.cpp" line="198"/>
+        <location filename="../TrayController.cpp" line="249"/>
+        <location filename="../TrayController.cpp" line="258"/>
+        <source>Display Configuration Changed</source>
+        <translation>Monitorkonfiguration geändert</translation>
+    </message>
+    <message>
+        <location filename="../TrayController.cpp" line="250"/>
+        <source>Click here to load the profile &quot;%1&quot;.</source>
+        <translation>Hier klicken, um das Profil „%1“ zu laden.</translation>
+    </message>
+    <message>
+        <location filename="../TrayController.cpp" line="259"/>
+        <source>Several profiles match. Which one should be loaded?</source>
+        <translation>Mehrere Profile passen. Welches soll geladen werden?</translation>
+    </message>
+    <message>
+        <location filename="../TrayController.cpp" line="194"/>
+        <location filename="../TrayController.cpp" line="205"/>
         <source>Profile &quot;%1&quot; loaded</source>
         <translation>Profil „%1“ geladen</translation>
     </message>
@@ -417,17 +451,17 @@ Jetzt herunterladen und installieren? Application Geometry Recovery wird für di
 <context>
     <name>WindowGeometry</name>
     <message>
-        <location filename="../WindowGeometry.cpp" line="400"/>
+        <location filename="../WindowGeometry.cpp" line="425"/>
         <source>Not found: %1</source>
         <translation>Nicht gefunden: %1</translation>
     </message>
     <message>
-        <location filename="../WindowGeometry.cpp" line="407"/>
+        <location filename="../WindowGeometry.cpp" line="432"/>
         <source>Not responding: %1</source>
         <translation>Reagiert nicht: %1</translation>
     </message>
     <message>
-        <location filename="../WindowGeometry.cpp" line="418"/>
+        <location filename="../WindowGeometry.cpp" line="443"/>
         <source>Failed (error %1): %2</source>
         <translation>Fehlgeschlagen (Fehler %1): %2</translation>
     </message>
@@ -435,17 +469,17 @@ Jetzt herunterladen und installieren? Application Geometry Recovery wird für di
 <context>
     <name>WindowState</name>
     <message>
-        <location filename="../WindowInfo.h" line="162"/>
+        <location filename="../WindowInfo.h" line="177"/>
         <source>Minimized</source>
         <translation>Minimiert</translation>
     </message>
     <message>
-        <location filename="../WindowInfo.h" line="164"/>
+        <location filename="../WindowInfo.h" line="179"/>
         <source>Maximized</source>
         <translation>Maximiert</translation>
     </message>
     <message>
-        <location filename="../WindowInfo.h" line="168"/>
+        <location filename="../WindowInfo.h" line="183"/>
         <source>Normal</source>
         <translation>Normal</translation>
     </message>

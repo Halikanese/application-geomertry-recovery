@@ -30,6 +30,7 @@
 #include <QPoint>
 #include <QRect>
 #include <QString>
+#include <QStringList>
 
 // State of a window, corresponds to WINDOWPLACEMENT::showCmd
 enum class WindowState {
@@ -102,6 +103,20 @@ struct MonitorInfo
     int dpi = 96;
     bool primary = false;
 };
+
+// The monitor rectangles in a fixed order. Device names are left out, because
+// they differ between local and Remote Desktop sessions.
+inline QStringList monitorSignature(const QList<MonitorInfo> &monitors)
+{
+    QStringList signature;
+    for (const MonitorInfo &monitor : monitors) {
+        const QRect &rect = monitor.geometry;
+        signature.append(QStringLiteral("%1,%2,%3,%4").arg(rect.x()).arg(rect.y())
+                             .arg(rect.width()).arg(rect.height()));
+    }
+    signature.sort();
+    return signature;
+}
 
 struct Profile
 {
